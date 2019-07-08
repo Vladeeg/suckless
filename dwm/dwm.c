@@ -114,6 +114,7 @@ typedef struct {
 struct Monitor {
 	char ltsymbol[16];
 	float mfact;
+	float mfact_cfm;
 	int nmaster;
 	int num;
 	int by;               /* bar geometry */
@@ -639,6 +640,7 @@ createmon(void)
 	m = ecalloc(1, sizeof(Monitor));
 	m->tagset[0] = m->tagset[1] = 1;
 	m->mfact = mfact;
+	m->mfact_cfm = mfact_cfm;
 	m->nmaster = nmaster;
 	m->showbar = showbar;
 	m->topbar = topbar;
@@ -2233,10 +2235,10 @@ centeredfloatingmaster(Monitor *m)
 	if (n > m->nmaster) {
 		/* go mfact box in the center if more than nmaster clients */
 		if (m->ww > m->wh) {
-			mw = m->nmaster ? m->ww * m->mfact : 0;
+			mw = m->nmaster ? m->ww * m->mfact_cfm : 0;
 			mh = m->nmaster ? m->wh * 0.9 : 0;
 		} else {
-			mh = m->nmaster ? m->wh * m->mfact : 0;
+			mh = m->nmaster ? m->wh * m->mfact_cfm : 0;
 			mw = m->nmaster ? m->ww * 0.9 : 0;
 		}
 		mx = mxo = (m->ww - mw) / 2;
