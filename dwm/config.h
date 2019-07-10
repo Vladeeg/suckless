@@ -32,10 +32,11 @@ static const Rule rules[] = {
 };
 
 /* layout(s) */
-static const float mfact     = 0.55; /* factor of master area size [0.05..0.95] */
-static const float mfact_cfm = 0.85;
-static const int nmaster     = 1;    /* number of clients in master area */
-static const int resizehints = 0;    /* 1 means respect size hints in tiled resizals */
+static const float mfact      = 0.55; /* factor of master area size [0.05..0.95] */
+static const float cfm_mfactw = 0.9;  /* factor of width of master area in centered floating master */
+static const float cfm_mfacth = 0.95; /* factor of height of master area in centered floating master */
+static const int nmaster      = 1;    /* number of clients in master area */
+static const int resizehints  = 0;    /* 1 means respect size hints in tiled resizals */
 
 static const int gappx = 0;
 

@@ -114,7 +114,8 @@ typedef struct {
 struct Monitor {
 	char ltsymbol[16];
 	float mfact;
-	float mfact_cfm;
+	float cfm_mfactw;
+	float cfm_mfacth;
 	int nmaster;
 	int num;
 	int by;               /* bar geometry */
@@ -640,7 +641,8 @@ createmon(void)
 	m = ecalloc(1, sizeof(Monitor));
 	m->tagset[0] = m->tagset[1] = 1;
 	m->mfact = mfact;
-	m->mfact_cfm = mfact_cfm;
+	m->cfm_mfactw = cfm_mfactw;
+	m->cfm_mfacth = cfm_mfacth;
 	m->nmaster = nmaster;
 	m->showbar = showbar;
 	m->topbar = topbar;
@@ -2235,11 +2237,11 @@ centeredfloatingmaster(Monitor *m)
 	if (n > m->nmaster) {
 		/* go mfact box in the center if more than nmaster clients */
 		if (m->ww > m->wh) {
-			mw = m->nmaster ? m->ww * m->mfact_cfm : 0;
-			mh = m->nmaster ? m->wh * 0.9 : 0;
+			mw = m->nmaster ? m->ww * m->cfm_mfactw : 0;
+			mh = m->nmaster ? m->wh * m->cfm_mfacth : 0;
 		} else {
-			mh = m->nmaster ? m->wh * m->mfact_cfm : 0;
-			mw = m->nmaster ? m->ww * 0.9 : 0;
+			mh = m->nmaster ? m->wh * m->cfm_mfactw : 0;
+			mw = m->nmaster ? m->ww * m->cfm_mfactw : 0;
 		}
 		mx = mxo = (m->ww - mw) / 2;
 		my = myo = (m->wh - mh) / 2;
@@ -2250,29 +2252,49 @@ centeredfloatingmaster(Monitor *m)
 		mx = mxo = 0;
 		my = myo = 0;
 	}
-	unsigned int rows, cols, ntiled, ch, cw, cx, cy, aw, ah;
-	ntiled = n - m->nmaster;
-	for(rows = 0; rows <= ntiled / 2; rows++)
-		if(rows * rows >= ntiled)
-			break;
-	rows = rows > 2 ? 2 : rows;
-	cols = rows ? (ntiled + rows - 1) / rows : rows;
-
-	for(i = tx = 0, c = nexttiled(m->clients); c && i < m->nmaster; c = nexttiled(c->next), i++) {
+	
+	/* draw master clients */
+	for (i = tx = 0, c = nexttiled(m->clients); c && i < m->nmaster; c = nexttiled(c->next), i++) {
 		/* nmaster clients are stacked horizontally, in the center
 		 * of the screen */
-		w = (mw + mxo -mx) / (MIN(n, m->nmaster) - i);
-		resize(c, m->wx+ mx, m->wy + my, w - (2*c->bw),
-		       mh - (2*c->bw), 0);
+		w = (mw + mxo - mx) / (MIN(n, m->nmaster) - i);
+		resize(c, m->wx + mx, m->wy + my, w - (2 * c->bw), mh - (2 * c->bw), 0);
 		mx += WIDTH(c);
 	}
+
+	/* draw tiled clients as grid [0..2]xN */
+	unsigned int ntiled, mincols, maxcols, cols, rows, cx, cy, cw, ch, rn, cn;
+	ntiled = n - m->nmaster;
+	if (0 == ntiled)
+		return;
+
+	/* grid dimensions (row number is limited to 2) */
+	for (rows = 0; rows < 2; rows++)
+		if (rows * rows >= ntiled)
+			break;
+
+	if (ntiled == 2) /* set layout against the general calculation: not vertical split, but horizontal */
+		rows = 1;
+	/* calculate number of columns for splits */
+	mincols = rows ? ntiled / rows : rows;
+	maxcols = rows ? (ntiled + rows - 1) / rows : rows;
+
+	/* cell height is always identical */
 	ch = m->wh / (rows ? rows : 1);
-	cw = m->ww / (cols ? cols : 1);
-	for (i = 0; c; c = nexttiled(c->next), i++) {
-		cx = m->wx + (i / rows ) * cw;
-		cy = m->wy + (i % rows ) * ch;
-		ah = ((i + 1) % rows == 0) ? m->wh - ch * rows : 0;
-		aw = (i >= rows * (cols - 1)) ? m->ww - cw*cols : 0;
-		resize(c, cx, cy, cw - (2*c->bw) + aw, ch - (2*c->bw) + ah, 0);
+	
+	rn = 0;
+	cn = 0;
+	for (i = 0; c; i++, c = nexttiled(c->next)) {
+		cols = i < maxcols ? maxcols : mincols;
+		cw = m->ww / (cols ? cols : 1);
+		cx = m->wx + cn * cw;
+		cy = m->wy + rn * ch;
+		resize(c, cx, cy, cw - 2 * c->bw, ch - 2 * c->bw, False);
+
+		++cn;
+		if (cn >= cols) {
+			++rn;
+			cn = 0;
+		}
 	}
 }
